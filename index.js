@@ -19,18 +19,15 @@ mongoose.connect(MONGO_URI, {
   useUnifiedTopology: true
 });
 
-// set up user schema
-const userSchema = new mongoose.Schema({
-  username: String
-});
+
 // set up exercise schema
 const exerciseSchema = new mongoose.Schema({
   description: String,
   duration: Number,
   date: String,
 });
-// set up log schema
-const logSchema = new mongoose.Schema({
+// set up user schema
+const userSchema = new mongoose.Schema({
   username: String,
   count: Number,
   log: [exerciseSchema]
