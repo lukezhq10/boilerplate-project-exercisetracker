@@ -32,14 +32,14 @@ const userSchema = new mongoose.Schema({
   count: Number,
   log: [exerciseSchema]
 });
-
-// set up user model
+// set up exercise and user model
+const Exercise = mongoose.model('Exercise', exerciseSchema);
 const User = mongoose.model('User', userSchema);
 
 // POST request for create a new user
 app.post('/api/users', async (req, res) => {
-  const username = req.body.username;
-  const newUser = new User({username});
+  var username = req.body.username;
+  var newUser = new User({username});
 
   try {
     // save new user to DB
@@ -75,16 +75,29 @@ app.get('/api/users/', (req, res) => {
       return res.json({ error: err });
     });
 });
-  // return list of users from .find() as an array
 
+// POST request for exercise form
+app.post('/api/users/:_id/exercises', (req, res) => {
+  // includes fields description, duration, date (optional - use current date if none)
+  var id = req.body._id;
+  var description = req.body.description;
+  var duration = req.body.duration;
+  
+  if (!req.body.date) {
+    var date = new Date().toDateString();
+    var newExercise = new Exercise({description, duration, date});
+  } else {
+    var date = req.body.date;
+    var newExercise = new Exercise({description, duration, date});
+  }
 
+  
 
-
-// // post requests for add exercises
-// app.post('/api/users/:_id/exercises', (req, res) => {
-
-// })
-
+  
+  // // add exercise into specified user based on _id
+  // User.findByIdAndUpdate(id, update)
+  // // return res.json(new user object with exercise added)
+})
 
 
 const listener = app.listen(process.env.PORT || 3000, () => {
