@@ -105,18 +105,21 @@ app.post('/api/users/:_id/exercises', async (req, res) => {
     duration: newExercise.duration,
     date: newExercise.date 
   }] };
+  
   User.findByIdAndUpdate(id, update, { new: true })
     .then(updatedUser => {
+      console.log(updatedUser)
       // return response with updated user object ******************
-      res.json(updatedUser);
+      res.send({
+        updatedUser
+      });
     })
     .catch((err) => {
       console.log(err);
       res.status(500).json("Server error");
     });
-});
-
+  });
 
 const listener = app.listen(process.env.PORT || 3000, () => {
   console.log('Your app is listening on port ' + listener.address().port)
-})
+});
