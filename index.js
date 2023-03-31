@@ -77,9 +77,9 @@ app.get('/api/users/', (req, res) => {
 });
 
 // POST request for exercise form
-app.post('/api/users/:_id/exercises', (req, res) => {
+app.post('/api/users/:_id/exercises', async (req, res) => {
   // includes fields description, duration, date (optional - use current date if none)
-  var id = req.body._id;
+  var id = req.params._id;
   var description = req.body.description;
   var duration = req.body.duration;
   
@@ -87,17 +87,34 @@ app.post('/api/users/:_id/exercises', (req, res) => {
     var date = new Date().toDateString();
     var newExercise = new Exercise({description, duration, date});
   } else {
-    var date = req.body.date;
+    var date = new Date(req.body.date).toDateString();
     var newExercise = new Exercise({description, duration, date});
   }
 
-  
+  try {
+    // save new user to DB
+    await newExercise.save();
+  } catch (err) {
+    console.log(err);
+    res.status(500).json("Server error");
+  }
 
-  
-  // // add exercise into specified user based on _id
-  // User.findByIdAndUpdate(id, update)
-  // // return res.json(new user object with exercise added)
-})
+  // add exercise into specified user based on _id
+  var update = { log: [{
+    description: newExercise.description,
+    duration: newExercise.duration,
+    date: newExercise.date 
+  }] };
+  User.findByIdAndUpdate(id, update, { new: true })
+    .then(updatedUser => {
+      // return response with updated user object ******************
+      res.json(updatedUser);
+    })
+    .catch((err) => {
+      console.log(err);
+      res.status(500).json("Server error");
+    });
+});
 
 
 const listener = app.listen(process.env.PORT || 3000, () => {
