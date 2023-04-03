@@ -41,15 +41,11 @@ app.post('/api/users', async (req, res) => {
   var username = req.body.username;
   var newUser = await User.create({username});
 
-    // return response with json object { username: , _id: }
-    return res.json({ 
-      username: newUser.username,
-      _id: newUser._id
-    });
-  } catch (err) {
-    console.log(err);
-    res.status(500).json("Server error");
-  }
+  // return response with json object { username: , _id: }
+  res.json({ 
+    username: newUser.username,
+    _id: newUser._id
+  })
 });
 
 // GET request to get all users in the DB as an array
@@ -81,18 +77,10 @@ app.post('/api/users/:_id/exercises', async (req, res) => {
   
   if (!req.body.date) {
     var date = new Date().toDateString();
-    var newExercise = new Exercise({description, duration, date});
+    var newExercise = await Exercise.create({description, duration, date});
   } else {
     var date = new Date(req.body.date).toDateString();
-    var newExercise = new Exercise({description, duration, date});
-  }
-
-  try {
-    // save new user to DB
-    await newExercise.save();
-  } catch (err) {
-    console.log(err);
-    res.status(500).json("Server error");
+    var newExercise = await Exercise.create({description, duration, date});
   }
 
   // add exercise into specified user based on _id
@@ -103,11 +91,16 @@ app.post('/api/users/:_id/exercises', async (req, res) => {
   }] };
   
   User.findByIdAndUpdate(id, update, { new: true })
+    .exec()
     .then(updatedUser => {
-      console.log(updatedUser)
+      console.log({
+        username: updatedUser.username,
+        description: updatedUser.log.description
+      })
       // return response with updated user object ******************
-      res.send({
-        updatedUser
+      res.json({
+        username: updatedUser.username,
+        description: updatedUser.log.description
       });
     })
     .catch((err) => {
