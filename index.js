@@ -77,10 +77,16 @@ app.post('/api/users/:_id/exercises', async (req, res) => {
   
   if (!req.body.date) {
     var date = new Date().toDateString();
-    var newExercise = await Exercise.create({description, duration, date});
+    var newExercise = await Exercise.create({
+      description: description,
+      duration: duration,
+      date: date});
   } else {
     var date = new Date(req.body.date).toDateString();
-    var newExercise = await Exercise.create({description, duration, date});
+    var newExercise = await Exercise.create({
+      description: description,
+      duration: duration,
+      date: date});
   }
 
   // add exercise into specified user based on _id
@@ -95,12 +101,21 @@ app.post('/api/users/:_id/exercises', async (req, res) => {
     .then(updatedUser => {
       console.log({
         username: updatedUser.username,
-        description: updatedUser.log.description
+        _id: updatedUser._id.toString(),
+        description: updatedUser.log[0].description,
+        duration: updatedUser.log[0].duration,
+        date: updatedUser.log[0].date
       })
       // return response with updated user object ******************
+      // to fix:
+      // 1) fix datestring off by -1
+      // 2) check if duration is int
       res.json({
         username: updatedUser.username,
-        description: updatedUser.log.description
+        _id: updatedUser._id.toString(),
+        description: updatedUser.log[0].description,
+        duration: updatedUser.log[0].duration,
+        date: updatedUser.log[0].date
       });
     })
     .catch((err) => {
