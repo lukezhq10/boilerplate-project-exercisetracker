@@ -39,11 +39,7 @@ const User = mongoose.model('User', userSchema);
 // POST request for create a new user
 app.post('/api/users', async (req, res) => {
   var username = req.body.username;
-  var newUser = new User({username});
-
-  try {
-    // save new user to DB
-    await newUser.save();
+  var newUser = await User.create({username});
 
     // return response with json object { username: , _id: }
     return res.json({ 
