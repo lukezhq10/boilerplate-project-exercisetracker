@@ -41,7 +41,8 @@ app.post('/api/users', async (req, res) => {
   var username = req.body.username;
   var newUser = await User.create({
     username: username,
-    count: 0});
+    count: 0
+  });
 
   // return response with json object { username: , _id: }
   res.json({ 
@@ -62,51 +63,64 @@ app.post('/api/users/:_id/exercises', async (req, res) => {
     var newExercise = await Exercise.create({
       description: description,
       duration: duration,
-      date: date});
+      date: date
+    });
   } else {
     var date = new Date(req.body.date).toDateString(); // local timezone needs to be UTC for test to pass with this
     var newExercise = await Exercise.create({
       description: description,
       duration: duration,
-      date: date});
+      date: date
+    });
   }
 
   // add exercise into specified user based on _id
-  var update = { log: [{
+  var update = { $push: { log: {
     description: newExercise.description,
     duration: newExercise.duration,
     date: newExercise.date 
-  }] };
+  } } };
 
   
   User.findByIdAndUpdate(id, update, { new: true })
     .exec()
     .then(updatedUser => {
+      // increase user count by 1 for new exercise added
       console.log({
         username: updatedUser.username,
         _id: updatedUser._id.toString(),
-        description: updatedUser.log[0].description,
-        duration: updatedUser.log[0].duration,
-        date: updatedUser.log[0].date
+        description: newExercise.description,
+        duration: newExercise.duration,
+        date: newExercise.date
       })
       // return response with updated user object
       res.json({
         username: updatedUser.username,
         _id: updatedUser._id.toString(),
-        description: updatedUser.log[0].description,
-        duration: updatedUser.log[0].duration,
-        date: updatedUser.log[0].date
+        description: newExercise.description,
+        duration: newExercise.duration,
+        date: newExercise.date
       });
-      updatedUser.count++; // increase user count by 1 for new exercise added
     })
     .catch((err) => {
       console.log(err);
       res.status(500).json("Server error");
     });
-  });
 
   // adding an exercise should increase User count +1
-
+  User.findByIdAndUpdate(id, { $inc: { count: 1 } }, { new: true })
+    .exec()
+    .then(updatedUser => {
+      console.log({
+        count: updatedUser.count,
+        log: updatedUser.log
+      })
+    })
+    .catch((err) => {
+      console.log(err);
+      res.status(500).json("Server error");
+    });
+});
 
 // GET request to get all users in the DB as an array
 app.get('/api/users/', (req, res) => {
@@ -147,6 +161,8 @@ app.get('/api/users/:_id/logs', (req, res) => {
     return res.json({ error: err });
   });
 })
+
+// from, to, and limit parameters to retrieve part of the log from a user
 
 
 
