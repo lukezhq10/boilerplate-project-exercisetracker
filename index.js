@@ -24,7 +24,7 @@ mongoose.connect(MONGO_URI, {
 const exerciseSchema = new mongoose.Schema({
   description: String,
   duration: Number,
-  date: String,
+  date: Date,
 });
 // set up user schema
 const userSchema = new mongoose.Schema({
@@ -59,14 +59,14 @@ app.post('/api/users/:_id/exercises', async (req, res) => {
   var duration = req.body.duration;
   
   if (!req.body.date) {
-    var date = new Date().toDateString();
+    var date = new Date();
     var newExercise = await Exercise.create({
       description: description,
       duration: duration,
       date: date
     });
   } else {
-    var date = new Date(req.body.date).toDateString(); // local timezone needs to be UTC for test to pass with this
+    var date = new Date(req.body.date); // local timezone needs to be UTC for test to pass with this
     var newExercise = await Exercise.create({
       description: description,
       duration: duration,
@@ -91,7 +91,7 @@ app.post('/api/users/:_id/exercises', async (req, res) => {
         _id: updatedUser._id.toString(),
         description: newExercise.description,
         duration: newExercise.duration,
-        date: newExercise.date
+        date: newExercise.date.toDateString()
       })
       // return response with updated user object
       res.json({
@@ -99,7 +99,7 @@ app.post('/api/users/:_id/exercises', async (req, res) => {
         _id: updatedUser._id.toString(),
         description: newExercise.description,
         duration: newExercise.duration,
-        date: newExercise.date
+        date: newExercise.date.toDateString()
       });
     })
     .catch((err) => {
@@ -161,13 +161,14 @@ app.get('/api/users/:_id/logs', async (req, res) => {
     // copy of log to filter based on from, to, limit queries
     var workingLog = user.log;
 
-    // filter exercise log by dates ????????????????????????????????????
+    // filter exercise log by dates ????????????? filtering exerciseDate as a Date vs. from & to -> but user.log.date is a String
     if (from && to) {
       var from = new Date(from);
       var to = new Date(to);
       var filteredLog = workingLog.filter(exercise => {
-        console.log("exercise", exercise.date);
-        exercise.date >= from && exercise.date <= to
+        let exerciseDate = new Date(exercise.date);
+        console.log("exercise", exerciseDate, "from", from, "to", to);
+        exerciseDate >= from && exerciseDate <= to
       });
       var workingLog = filteredLog;
     } else {
@@ -185,7 +186,7 @@ app.get('/api/users/:_id/logs', async (req, res) => {
     var test = workingLog.map(item => ({
       description: item.description,
       duration: item.duration,
-      date: item.date
+      date: item.date.toDateString()
     }));
 
     // rebuild exp response
