@@ -143,28 +143,70 @@ app.get('/api/users/', (req, res) => {
 });
 
 // GET request to retrieve full exercise log of a user
-app.get('/api/users/:_id/logs', (req, res) => {
+app.get('/api/users/:_id/logs', async (req, res) => {
   var id = req.params._id;
-  User.findById(id)
-  .exec()
-  .then((data) => {
-    console.log(data);
-    if (data) {
-      console.log(data);
-      res.json(data);
-    } else {
-      res.send('no user found');
+  var from = req.query.from;
+  var to = req.query.to;
+  var limit = req.query.limit;
+
+
+  try {
+    var user = await User.findById(id);
+
+    if (!user) {
+      console.log('no user found');
+      return res.status(400).json({ error: 'no user found' });
     }
-  })
-  .catch((err) => {
+
+    // copy of log to filter based on from, to, limit queries
+    var workingLog = user.log;
+
+    // filter exercise log by dates ????????????????????????????????????
+    if (from && to) {
+      var from = new Date(from);
+      var to = new Date(to);
+      var filteredLog = workingLog.filter(exercise => {
+        console.log("exercise", exercise.date);
+        exercise.date >= from && exercise.date <= to
+      });
+      var workingLog = filteredLog;
+    } else {
+      // return full user log
+      var workingLog = user.log;
+    }
+
+    // limit number of exercises returned
+    if (limit) {
+      var slicedLog = workingLog.slice(0, limit);
+      var workingLog = slicedLog;
+    }
+
+    // convert log date back to string to fulfill test
+    var test = workingLog.map(item => ({
+      description: item.description,
+      duration: item.duration,
+      date: item.date
+    }));
+
+    // rebuild exp response
+    var exerciseLog = {
+      username: user.username,
+      _id: user._id,
+      count: workingLog.length,
+      log: test
+    }
+
+    console.log(exerciseLog)
+    res.json(exerciseLog);
+
+  } catch (err) {
     console.error(err);
-    return res.json({ error: err });
-  });
+    res.status(500).json({ error: "server error" });
+  }
 })
 
-// from, to, and limit parameters to retrieve part of the log from a user
 
-
+// test user 642e02bf7207dacb547ebbfb
 
 const listener = app.listen(process.env.PORT || 3000, () => {
   console.log('Your app is listening on port ' + listener.address().port)
