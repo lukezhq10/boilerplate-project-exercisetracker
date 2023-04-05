@@ -39,7 +39,9 @@ const User = mongoose.model('User', userSchema);
 // POST request for create a new user
 app.post('/api/users', async (req, res) => {
   var username = req.body.username;
-  var newUser = await User.create({username});
+  var newUser = await User.create({
+    username: username,
+    count: 0});
 
   // return response with json object { username: , _id: }
   res.json({ 
@@ -47,6 +49,64 @@ app.post('/api/users', async (req, res) => {
     _id: newUser._id
   })
 });
+
+// POST request for exercise form
+app.post('/api/users/:_id/exercises', async (req, res) => {
+  // includes fields description, duration, date (optional - use current date if none)
+  var id = req.params._id;
+  var description = req.body.description;
+  var duration = req.body.duration;
+  
+  if (!req.body.date) {
+    var date = new Date().toDateString();
+    var newExercise = await Exercise.create({
+      description: description,
+      duration: duration,
+      date: date});
+  } else {
+    var date = new Date(req.body.date).toDateString(); // local timezone needs to be UTC for test to pass with this
+    var newExercise = await Exercise.create({
+      description: description,
+      duration: duration,
+      date: date});
+  }
+
+  // add exercise into specified user based on _id
+  var update = { log: [{
+    description: newExercise.description,
+    duration: newExercise.duration,
+    date: newExercise.date 
+  }] };
+
+  
+  User.findByIdAndUpdate(id, update, { new: true })
+    .exec()
+    .then(updatedUser => {
+      console.log({
+        username: updatedUser.username,
+        _id: updatedUser._id.toString(),
+        description: updatedUser.log[0].description,
+        duration: updatedUser.log[0].duration,
+        date: updatedUser.log[0].date
+      })
+      // return response with updated user object
+      res.json({
+        username: updatedUser.username,
+        _id: updatedUser._id.toString(),
+        description: updatedUser.log[0].description,
+        duration: updatedUser.log[0].duration,
+        date: updatedUser.log[0].date
+      });
+      updatedUser.count++; // increase user count by 1 for new exercise added
+    })
+    .catch((err) => {
+      console.log(err);
+      res.status(500).json("Server error");
+    });
+  });
+
+  // adding an exercise should increase User count +1
+
 
 // GET request to get all users in the DB as an array
 app.get('/api/users/', (req, res) => {
@@ -68,61 +128,27 @@ app.get('/api/users/', (req, res) => {
     });
 });
 
-// POST request for exercise form
-app.post('/api/users/:_id/exercises', async (req, res) => {
-  // includes fields description, duration, date (optional - use current date if none)
+// GET request to retrieve full exercise log of a user
+app.get('/api/users/:_id/logs', (req, res) => {
   var id = req.params._id;
-  var description = req.body.description;
-  var duration = req.body.duration;
-  
-  if (!req.body.date) {
-    var date = new Date().toDateString();
-    var newExercise = await Exercise.create({
-      description: description,
-      duration: duration,
-      date: date});
-  } else {
-    var date = new Date(req.body.date).toDateString();
-    var newExercise = await Exercise.create({
-      description: description,
-      duration: duration,
-      date: date});
-  }
-
-  // add exercise into specified user based on _id
-  var update = { log: [{
-    description: newExercise.description,
-    duration: newExercise.duration,
-    date: newExercise.date 
-  }] };
-  
-  User.findByIdAndUpdate(id, update, { new: true })
-    .exec()
-    .then(updatedUser => {
-      console.log({
-        username: updatedUser.username,
-        _id: updatedUser._id.toString(),
-        description: updatedUser.log[0].description,
-        duration: updatedUser.log[0].duration,
-        date: updatedUser.log[0].date
-      })
-      // return response with updated user object ******************
-      // to fix:
-      // 1) fix datestring off by -1
-      // 2) check if duration is int
-      res.json({
-        username: updatedUser.username,
-        _id: updatedUser._id.toString(),
-        description: updatedUser.log[0].description,
-        duration: updatedUser.log[0].duration,
-        date: updatedUser.log[0].date
-      });
-    })
-    .catch((err) => {
-      console.log(err);
-      res.status(500).json("Server error");
-    });
+  User.findById(id)
+  .exec()
+  .then((data) => {
+    console.log(data);
+    if (data) {
+      console.log(data);
+      res.json(data);
+    } else {
+      res.send('no user found');
+    }
+  })
+  .catch((err) => {
+    console.error(err);
+    return res.json({ error: err });
   });
+})
+
+
 
 const listener = app.listen(process.env.PORT || 3000, () => {
   console.log('Your app is listening on port ' + listener.address().port)
