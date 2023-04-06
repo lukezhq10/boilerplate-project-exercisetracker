@@ -156,19 +156,18 @@ app.get('/api/users/:_id/logs', async (req, res) => {
     if (!user) {
       console.log('no user found');
       return res.status(400).json({ error: 'no user found' });
-    }
-
-    // copy of log to filter based on from, to, limit queries
+    } else {
+      // copy of log to filter based on from, to, limit queries
     var workingLog = user.log;
 
-    // filter exercise log by dates ????????????? filtering exerciseDate as a Date vs. from & to -> but user.log.date is a String
+    // filter exercise log by from & to dates given
     if (from && to) {
       var from = new Date(from);
       var to = new Date(to);
       var filteredLog = workingLog.filter(exercise => {
         let exerciseDate = new Date(exercise.date);
         console.log("exercise", exerciseDate, "from", from, "to", to);
-        exerciseDate >= from && exerciseDate <= to
+        return exerciseDate >= from && exerciseDate <= to
       });
       var workingLog = filteredLog;
     } else {
@@ -199,7 +198,7 @@ app.get('/api/users/:_id/logs', async (req, res) => {
 
     console.log(exerciseLog)
     res.json(exerciseLog);
-
+    }
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "server error" });
